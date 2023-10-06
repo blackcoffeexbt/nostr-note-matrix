@@ -315,6 +315,7 @@ pubkeyUsernameVector.push_back(std::make_pair("50d94fc2d8580c682b071a542f8b1e31a
 pubkeyUsernameVector.push_back(std::make_pair("04c915daefee38317fa734444acee390a8269fe5810b2241e5e6dd343dfbecc9", "ODELL"));
 pubkeyUsernameVector.push_back(std::make_pair("e9e4276490374a0daf7759fd5f475deff6ffb9b0fc5fa98c902b5f4b2fe3bba2", "benarc"));
 pubkeyUsernameVector.push_back(std::make_pair("npub1dergggklka99wwrs92yz8wdjs952h2ux2ha2ed598ngwu9w7a6fsh9xzpc", "dergigi"));
+pubkeyUsernameVector.push_back(std::make_pair("683211bd155c7b764e4b99ba263a151d81209be7a566a2bb1971dc1bbd3b715e", "BlackCoffee"));
 
   FlashFS.begin(FORMAT_ON_FAIL);
   // init spiffs
