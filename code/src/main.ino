@@ -1,3 +1,5 @@
+#include <vector>
+#include <utility>
 #include <Arduino.h>
 #include <WiFi.h>
 #include <WebServer.h>
@@ -39,6 +41,9 @@
 TaskHandle_t DisplayTaskHandle = NULL;
 
 MD_Parola P = MD_Parola(HARDWARE_TYPE, CS_PIN, MAX_DEVICES);
+
+// declare a pubkey > username vector to use when creating the authors sub request
+std::vector<std::pair<String, String>> pubkeyUsernameVector;
 
 // Scrolling parameters
 uint8_t scrollSpeed = 50; // default frame delay value
@@ -119,6 +124,7 @@ void WiFiEvent(WiFiEvent_t event) {
   }
 }
 
+
 /**
  * @brief Create a Zap Event Request object
  * 
@@ -135,13 +141,16 @@ void createNoteEventRequest() {
   Serial.println("npubHexString is |" + String(npubHexString) + "|");
   if(String(npubHexString) != "") {
     Serial.println("npub is specified");
-    String* authors = new String[1];  // Allocate memory dynamically
-    authors[0] = npubHexString;
+    String* authors = new String[pubkeyUsernameVector.size()];
+    // add each pubkey to the authors array
+    for (int i = 0; i < pubkeyUsernameVector.size(); i++) {
+      authors[i] = pubkeyUsernameVector[i].first;
+    }
     eventRequestOptions->authors = authors;
     eventRequestOptions->authors_count = 1;
   }
 
-  eventRequestOptions->limit = 1;
+  eventRequestOptions->limit = 5;
 
 
   // We store this here for sending this request again if a socket reconnects
@@ -264,6 +273,15 @@ uint16_t getRandomNum(uint16_t min, uint16_t max) {
   return rand;
 }
 
+String getUsernameByPubkey(const String& pubkey) {
+    for (const auto& pair : pubkeyUsernameVector) {
+        if (pair.first == pubkey) {
+            return pair.second;
+        }
+    }
+    return ""; // Return an empty string if pubkey not found
+}
+
 void noteEvent(const std::string& key, const char* payload) {
     if(lastPayload != payload) { // Prevent duplicate events from multiple relays triggering the same logic, as we are using multiple relays, this is likely to happen
       Serial.println("note payload is: ");
@@ -273,13 +291,30 @@ void noteEvent(const std::string& key, const char* payload) {
       deserializeJson(eventJson, payload);
       String content = eventJson[2]["content"].as<String>();
       Serial.println("content is: " + content);
+      // get the author pubkey from the pubkey key
+      String authorPubkey = eventJson[2]["pubkey"].as<String>();
+      Serial.println("author pubkey is: " + authorPubkey);
+      // lookup the username from the pubkey in pubkeyUsernameVector
+      String username = getUsernameByPubkey(authorPubkey);
+      
+      // set the message
+      if(username != "") {
+        setNewMessage((username + " - " + content).c_str());
+      } else {
       setNewMessage(content.c_str());
+      }
     }
 }
 
 void setup() {
   Serial.begin(115200);
   Serial.println("boot");
+
+  // now add some data to pubkeyUsernameVector
+pubkeyUsernameVector.push_back(std::make_pair("50d94fc2d8580c682b071a542f8b1e31a200b0508bab95a33bef0855df281d63", "callebtc"));
+pubkeyUsernameVector.push_back(std::make_pair("04c915daefee38317fa734444acee390a8269fe5810b2241e5e6dd343dfbecc9", "ODELL"));
+pubkeyUsernameVector.push_back(std::make_pair("e9e4276490374a0daf7759fd5f475deff6ffb9b0fc5fa98c902b5f4b2fe3bba2", "benarc"));
+pubkeyUsernameVector.push_back(std::make_pair("npub1dergggklka99wwrs92yz8wdjs952h2ux2ha2ed598ngwu9w7a6fsh9xzpc", "dergigi"));
 
   FlashFS.begin(FORMAT_ON_FAIL);
   // init spiffs
